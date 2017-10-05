@@ -1,0 +1,31 @@
+{
+  "name": "ClearPr",
+  "version": "1.0.0",
+  "description": "Clear project sass gulp",
+  "main": "index.html",
+  "scripts": {
+    "test": "Test"
+  },
+  "author": "sshatova@gmail.com",
+  "license": "ISC",
+
+    "devDependencies": {
+        "gulp": "latest",
+        "gulp-imagemin": "latest",
+        "gulp-sass": "latest",
+        "gulp-csso": "latest",
+        "gulp-group-css-media-queries": "latest",
+        "gulp-autoprefixer": "latest",
+        "gulp-uglify": "latest",
+        "gulp-rigger": "latest",
+        "gulp-concat": "latest",
+        "gulp-csscomb": "latest",
+        "gulp-rename": "latest",
+        "gulp-sourcemaps": "latest",
+        "gulp-rimraf": "latest",
+        "gulp-svg-sprite": "latest",
+        "gulp-svgmin": "latest",
+        "gulp-cheerio": "latest"
+
+    }
+}
