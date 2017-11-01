@@ -1,117 +1,105 @@
-/*
- *
- * переменные  задач
- *
- */
- var gulp = require('gulp'),                              // Gulp
-   sass = require('gulp-sass'),                           // Конверстация SASS (SCSS) в CSS
-   uglify = require('gulp-uglify'),                       // Минификация JS
-   mincss = require('gulp-csso'),                         // Минификация CSS
-   csscomb = require('gulp-csscomb'),                     // Форматирование CSS
-   autoprefixer = require('gulp-autoprefixer'),           // Автопрефиксер
-   groupmq = require('gulp-group-css-media-queries'),     // Группирование медиазапросов
-   minimage = require('gulp-imagemin'),                   // Минификация изображений
-   concat = require('gulp-concat'),                       // Склейка файлов
-   rigger = require('gulp-rigger'),                       // Инклюд
-   rename = require('gulp-rename'),                       // переименвоание файлов
-   sourcemaps = require('gulp-sourcemaps'),               // sourcemaps
-   imagemin = require('gulp-imagemin'),                   // минимизация изображений
-   rimraf = require("gulp-rimraf"),                       // удаление файло
-   svgSprite = require('gulp-svg-sprite'),                // создание спрайта
-   svgmin = require('gulp-svgmin'),                       // минификация SVG
-   cheerio = require('gulp-cheerio');                     // удаление лишних атрибутов из svg
+var browserSync = require('browser-sync');
+var reload = browserSync.reload;
+var gulp = require('gulp');
+var autoprefixer = require('gulp-autoprefixer');
+var iconfont = require('gulp-iconfont');
+var iconfontCss = require('gulp-iconfont-css');
+var imagemin = require('gulp-imagemin');
+var minifyCss = require('gulp-minify-css');
+var scss = require('gulp-sass');
+var sourcemaps = require('gulp-sourcemaps');
+var uglify = require('gulp-uglify');
+var watch = require('gulp-watch');
+var rigger = require('gulp-rigger');
+var rimraf = require('gulp-rimraf');
 
+var fontName = "fontName";
 
-/*
- *
- * переменные для путей
- *
- */
-
-var files = {
-  source: {
-      html: 'source/*.html',
-     style: 'source/scss/main.scss',
-     scss: 'source/scss/*',
-        js: 'source/js/*.js',
-       img: 'source/img/sprite/*.*',
-       svg: 'source/img/sprite/*.svg',
-       png: 'source/img/sprite/*.png'
-  },
-  build: {
-      html: 'build/',
-       css: 'build/css/',
-        js: 'build/js/',
-       img: 'build/img/'
-  },
-  watch: {
-      html: ['source/*.html', 'source/include/*.html'],
-     style: 'source/scss/*',
-        js: 'source/js/*.js',
-       img: 'source/img/*'
-  },
-};
-
-
-/*
- *
- * Таски
- *
- */
-
-// Sass
-  gulp.task('sass', function () {
-     return gulp.src(files.source.style)
-     .pipe(sourcemaps.init())
-     .pipe(sass())
-     .pipe(csscomb())
-
-     .pipe(autoprefixer())
-     .pipe(groupmq())
-     .pipe(sourcemaps.write())
-     .pipe(gulp.dest(files.build.css))
-
-     .pipe(mincss())
-     .pipe(rename({suffix: ".min"}))
-
-     .pipe(gulp.dest(files.build.css))
-  });
-
-
-// HTML
-gulp.task('html', function () {
-    gulp.src(files.source.html)
-        .pipe(rigger())
-        .pipe(gulp.dest(files.build.html))
+gulp.task('webserver', function () {
+    browserSync({
+        server: {
+            baseDir: "./build"
+        },
+        host: 'localhost',
+        port: 3000,
+        tunnel: true
+    })
 });
-
-
-// JS
-gulp.task('js', function () {
-    gulp.src(files.source.js)
-        .pipe(rigger())
-        .pipe(sourcemaps.init())
-        .pipe(sourcemaps.write())
-        .pipe(gulp.dest(files.build.js))
-
-        .pipe(rename({suffix: '.min'}))
-        .pipe(uglify())
-        .pipe(gulp.dest(files.build.js))
-});
-
-gulp.task('watch', function () {
-  gulp.watch(files.watch.html, ['html']);
-  gulp.watch(files.watch.style, ['sass']);
-});
-
 
 gulp.task('build', [
+    'scss',
     'html',
-    'sass',
-    'js'
+    'img',
+    'js',
+    'svgFont'
+
 ]);
 
-gulp.task('clean', function() {
- return gulp.src('./build/*')
-   .pipe(rimraf());
+gulp.task('clean', function () {
+    return gulp.src('./build', {read: false})
+        .pipe(rimraf());
 });
+
+gulp.task('fonts', function () {
+    return gulp.src('./source/fonts/*')
+        .pipe(gulp.dest('./build/fonts/'))
+});
+
+gulp.task('svgFont', function () {
+    return gulp.src('./source/img/icon/*.svg')
+        .pipe(iconfontCss({
+            path: './source/scss/templates/_icons_template.scss',
+            fontName: fontName,
+            targetPath: '../../source/scss/icon/_icons.scss'
+        }))
+        .pipe(iconfont({
+            fontName: fontName
+        }))
+        .pipe(gulp.dest('build/fonts/'));
+
+});
+
+gulp.task('html', function () {
+    return gulp.src('./source/*.html')
+        .pipe(rigger())
+        .pipe(gulp.dest('./build/'))
+        .pipe(reload({stream: true }));
+});
+
+gulp.task('js', function () {
+    return gulp.src('./source/js/*.*')
+        .pipe(sourcemaps.init())
+        .pipe(uglify())
+        .pipe(gulp.dest('./build/js/'))
+        .pipe(sourcemaps.write())
+        .pipe(reload({stream: true }));
+});
+
+gulp.task('img', function () {
+    return gulp.src('./source/img/*.*')
+        .pipe(imagemin())
+        .pipe(gulp.dest('./build/img/'))
+        .pipe(reload({stream: true }));
+});
+
+gulp.task('scss', function () {
+    return gulp.src('./source/scss/main.scss')
+        .pipe(sourcemaps.init())
+        .pipe(scss())
+        .pipe(autoprefixer())
+        .pipe(minifyCss())
+        .pipe(sourcemaps.write())
+        .pipe(gulp.dest('./build/css'))
+        .pipe(reload({stream: true }));
+});
+
+gulp.task('watch', ['scss', 'html', 'img', 'js', 'fonts', 'svgFont'], function() {
+    gulp.watch('source/scss/*', ['scss']);
+    gulp.watch('source/*.*', ['html']);
+    gulp.watch('source/img/*.*', ['img']);
+    gulp.watch('source/js/*.*', ['js']);
+    gulp.watch('source/fonts/*', ['fonts']);
+    gulp.watch('source/img/icon/*.svg', ['svgFont']);
+});
+
+gulp.task('default', ['clean', 'build', 'webserver', 'watch']);
